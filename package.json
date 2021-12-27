@@ -1,0 +1,28 @@
+{
+  "name": "studying-twitter-api",
+  "version": "1.0.0",
+  "description": "studying the twitter api to create personal projects",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jvitorn/studying-twitter-api.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/jvitorn/studying-twitter-api/issues"
+  },
+  "homepage": "https://github.com/jvitorn/studying-twitter-api#readme",
+  "dependencies": {
+    "axios": "^0.24.0",
+    "cli-progress": "^3.9.1",
+    "cors": "^2.8.5",
+    "express": "^4.17.2"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.15"
+  }
+}
