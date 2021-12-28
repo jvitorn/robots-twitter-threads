@@ -20,7 +20,8 @@
     "axios": "^0.24.0",
     "cli-progress": "^3.9.1",
     "cors": "^2.8.5",
-    "express": "^4.17.2"
+    "express": "^4.17.2",
+    "md-2-json": "^2.0.0"
   },
   "devDependencies": {
     "nodemon": "^2.0.15"
