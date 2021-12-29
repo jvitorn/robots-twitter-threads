@@ -119,22 +119,9 @@ async function formatToTweets() {
                     'text': ajustesTexto.textoAjustado
                 })
             } while (restoTexto != '')
-
-            console.log('objTweet ->', objTweet);
-            
         }
-        // objTweet.forEach((t,i) => {
-        //     do {
-        //         const liT = t.text.split(',');
-        //         liT.forEach((l,id)=>{
-        //             console.log(l.length + l[id].length);
-        //         })
-        //         idx++;  5495
-        //     } while (t.text.length > config.twitter.limit);
-        // })
-
         //salvando em json
-        await fs.writeFileSync(config.dir.json + 'teste.json', JSON.stringify(objTweet));
+        await fs.writeFileSync(config.dir.finished + 'teste.json', JSON.stringify(objTweet));
 
     } catch (e) {
         console.log('error', e)
