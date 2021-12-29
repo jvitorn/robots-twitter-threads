@@ -13,6 +13,9 @@ module.exports = {
     'dir': {
         'thread': 'sources/threads/',
         'json': 'sources/state/',
-        'finished':'sources/finished/'
-    }
+        'finished':'sources/finished/',
+        'content':'sources/content/'
+    },
+    'folder':'01',
+    'state':'thread.json'
 }
