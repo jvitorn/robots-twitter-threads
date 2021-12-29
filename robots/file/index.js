@@ -89,49 +89,39 @@ async function formatToTweets() {
             }
         })
         //logica para caracteres do twitter
-        let objTeste = [];
         let restoTexto = '';
 
         objTweet = objTweet.map((t) => {
-            t.text = restoTexto + ' ' + t.text;
-            restoTexto = '';
-            //array de palavras
-            let p = t.text.split(' ');
-            // vai receber o total de palavras no texto
-            t.text = p.reduce((texto, palavra) => {
-                if ((texto.length + palavra.length) < config.twitter.limit) {
-                    texto = texto + ' ' + palavra;
-                } else {
-                    restoTexto = restoTexto + ' ' + palavra;
-                }
-                return texto;
 
-            }, '')
+            let ajustesTexto = ajustarTexto({
+                textoOriginal: t.text,
+                restoTexto: restoTexto,
+                concatenarTextos: true
+            });
+
+            restoTexto = ajustesTexto.restoTexto;
+            t.text = ajustesTexto.textoAjustado;
+
             return t;
         })
+
         if (restoTexto != '') {
             do {
-                let txtRest = '';
-                //array de palavras
-                let p = restoTexto.split(' ');
-                restoTexto = '';
-                // vai receber o total de palavras no texto
-                txtRest = p.reduce((texto, palavra) => {
-                    if ((texto.length + palavra.length) < config.twitter.limit) {
-                        texto = texto + ' ' + palavra;
-                    } else {
-                        restoTexto = restoTexto + ' ' + palavra;
-                    }
-                    return texto;
+                let ajustesTexto = ajustarTexto({
+                    textoOriginal: restoTexto,
+                    restoTexto: restoTexto,
+                    concatenarTextos: false
+                });
 
-                }, '')
+                restoTexto = ajustesTexto.restoTexto;
+
                 objTweet.push({
-                    'text': txtRest
+                    'text': ajustesTexto.textoAjustado
                 })
             } while (restoTexto != '')
 
             console.log('objTweet ->', objTweet);
-
+            
         }
         // objTweet.forEach((t,i) => {
         //     do {
@@ -151,6 +141,49 @@ async function formatToTweets() {
         process.exit(1);
     }
 }
+
+function ajustarTexto(params) {
+    let { textoOriginal, restoTexto, concatenarTextos  } = params;
+
+    if (concatenarTextos) textoOriginal = restoTexto + ' ' + textoOriginal;
+
+    let txtRest = '';
+    //array de palavras
+    let p = textoOriginal.split(' ');
+    restoTexto = '';
+
+    let montandoTexto = true;
+
+    // vai receber o total de palavras no texto
+    txtRest = p.reduce((texto, palavra) => {
+
+        // irá adicionar a palavra apenas se couber E se ainda estiver montando o texto atual.
+        if ((texto.length + palavra.length + 3) < config.twitter.limit && montandoTexto) {
+            texto = texto + ' ' + palavra;
+        } else {
+            // se for a primeira vez que está entrando no else (se ainda está montando o texto), adiciona os 3 pontinhos no final
+            if (montandoTexto) {
+                texto = texto + '...';
+                restoTexto = '...' + restoTexto.trim();
+            }
+
+            // ao nao conseguir encaixar a proxima palavra, define a variavel como false. impedindo que palavras menores sejam adiconadas ao texto atual
+            montandoTexto = false;
+
+            // salva as palavras que excedem o limite de caracteres para utiliza-las no próximo texto
+            restoTexto = restoTexto + ' ' + palavra;
+        }
+
+        // retorna o texto montado no tamanho máximo possivel
+        return texto.trim();
+    }, '');
+
+    return {
+        textoAjustado: txtRest,
+        restoTexto: restoTexto
+    }
+}
+
 function regexSwt(str, i) {
     let p = '';
     switch (true) {
