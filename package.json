@@ -21,7 +21,8 @@
     "cli-progress": "^3.9.1",
     "cors": "^2.8.5",
     "express": "^4.17.2",
-    "sbd": "^1.0.19"
+    "sbd": "^1.0.19",
+    "twitter": "^1.7.1"
   },
   "devDependencies": {
     "nodemon": "^2.0.15"
