@@ -1,13 +1,14 @@
 const fs = require("fs");
-const sbd = require("sbd");
+const imageDownloader = require('image-downloader');
 const arrMd = [];
-
-
 const config = require('../../config');
 
 async function robot() {
-    await formatMdAndConvertToJson();
+    console.log('> [file-robot] -> Starting...');
+    //await formatMdAndConvertToJson();
+    console.log('> [file-robot] -> file MD converting to JSON with Success');
     await formatToTweets();
+    console.log('> [file-robot] -> Ready to POSTING TWEETS');
 }
 
 
@@ -24,18 +25,20 @@ async function formatMdAndConvertToJson() {
         const md = await fs.readFileSync(config.dir.thread + file, 'utf8');
         //rename folder
         await fs.renameSync(config.dir.thread + folder, config.dir.thread + config.folder);
-        console.log('folder rename with success!');
+        console.log('> [file-robot] -> folder rename with success!');
         // separando pela quebra de linha
         let textMd = md.split('\n\n');
         //formatando os objetos para visualização em json
-        textMd.forEach((p, i) => {
-            regexSwt(p, i);
-        })
+        await fs.renameSync(config.dir.thread + config.folder, config.dir.content + config.folder);
+
+        for (const [i, p] of textMd.entries()) {
+            await regexSwt(p, i);
+        }
         //salvando em json
-        console.log('file created in :' + config.dir.json + file + '.json');
+        console.log('> [file-robot] -> file created in :' + config.dir.json + file + '.json');
         await fs.writeFileSync(config.dir.json + file + '.json', JSON.stringify(arrMd));
     } catch (e) {
-        console.log('erro', e);
+        console.log('> [file-robot] -> error', e.messege);
     }
 
 
@@ -83,7 +86,7 @@ async function formatToTweets() {
                         objTweet[c].text = t.value;
                     } else if (!objTweet[c].image && objTweet[c].text) {
                         objTweet[c].text = t.value;
-                    } else if (objTweet[c].image && objTweet[c].text && c != 0) {
+                    } else if (objTweet[c].image && objTweet[c].text && c != 0 && !t.font) {
                         objTweet[c].text += t.value;
                     }
                     else {
@@ -98,16 +101,13 @@ async function formatToTweets() {
         let restoTexto = '';
 
         objTweet = objTweet.map((t) => {
-
             let ajustesTexto = ajustarTexto({
                 textoOriginal: t.text,
                 restoTexto: restoTexto,
                 concatenarTextos: true
             });
-
             restoTexto = ajustesTexto.restoTexto;
             t.text = ajustesTexto.textoAjustado;
-
             return t;
         })
 
@@ -128,25 +128,25 @@ async function formatToTweets() {
         }
         //salvando em json
         await fs.writeFileSync(config.dir.finished + config.state, JSON.stringify(objTweet));
-        console.log('json created in: ' + config.dir.finished + config.state);
+        console.log('> [file-robot] -> json created in: ' + config.dir.finished + config.state);
         //apagando arquivo que não será usado novamente
-        await fs.unlinkSync(config.dir.json + files[0]);
-        console.log('file deleded in: ' + config.dir.json + files[0])
+        // await fs.unlinkSync(config.dir.json + files[0]);
+        // console.log('> [file-robot] -> file deleded in: ' + config.dir.json + files[0])
         //delete file md
-        let filesThread = await fs.readdirSync(config.dir.thread);
-        let fileMd = filesThread.filter(f => {
-            return /md/.test(f) ? true : false;
-        })[0];
-        let folderMd = filesThread.filter(f => {
-            return /md/.test(f) ? false : true;
-        })[0]
-        await fs.unlinkSync(config.dir.thread + fileMd);
-        console.log('file deleded in: ' + config.dir.thread + fileMd);
-        await fs.renameSync(config.dir.thread + folderMd, config.dir.content + config.folder);
+        // let filesThread = await fs.readdirSync(config.dir.thread);
+        // let fileMd = filesThread.filter(f => {
+        //     return /md/.test(f) ? true : false;
+        // })[0];
+        // let folderMd = filesThread.filter(f => {
+        //     return /md/.test(f) ? false : true;
+        // })[0]
+        // await fs.unlinkSync(config.dir.thread + fileMd);
+        // console.log('> [file-robot] -> file deleded in: ' + config.dir.thread + fileMd);
+
 
 
     } catch (e) {
-        console.log('error', e);
+        console.log('> [file-robot] -> error', e);
     }
 }
 
@@ -166,7 +166,7 @@ function ajustarTexto(params) {
     txtRest = p.reduce((texto, palavra) => {
 
         // irá adicionar a palavra apenas se couber E se ainda estiver montando o texto atual.
-        if ((texto.length + palavra.length + 3) < config.twitter.limit && montandoTexto) {
+        if ((texto.length + palavra.length + 4) < config.twitter.limit && montandoTexto) {
             texto = texto + ' ' + palavra;
         } else {
             // se for a primeira vez que está entrando no else (se ainda está montando o texto), adiciona os 3 pontinhos no final
@@ -192,12 +192,12 @@ function ajustarTexto(params) {
     }
 }
 
-function regexSwt(str, i) {
+async function regexSwt(str, i) {
     try {
         let p = '';
         switch (true) {
             // format h1
-            case /(#.)/.test(str):
+            case /(^)(#)(\s)/.test(str):
                 p = str.replace(/(#.)/, '');
                 arrMd.push({
                     index: i,
@@ -205,18 +205,44 @@ function regexSwt(str, i) {
                     init: true
                 })
                 break;
+            //format h2,h3...
+            case /(#{2})(\s)/.test(str):
+                p = str.replace(/(#.)/g, '');
+                arrMd.push({
+                    index: i,
+                    value: p,
+                })
+                break;
+            //format fonte
+            case /^[*]/.test(str):
+                p = str.replace(/([[])|\(([^()]*)\)|(!.)|(])|([*])/g, '\n');
+                arrMd.push({
+                    index: i,
+                    value: p,
+                    font: true
+                })
+                break;
+
             //format image
-            case /\(([^()]+)\)/.test(str):
-                p = str.replace(/(!.)/, '').split(']');
+            case /(^!.)/g.test(str):
+                p = str.replace(/(^!.)/g, '').split(']');
                 let file = p[1];
 
-                if (/[()]/.test(file)) {
-                    file = file.split('');
-                    file.pop();
-                    file.shift();
-                    file = file.join('');
-                    file = file.replace(/((.*)+[/])/, '');
+                file = file.split('');
+                file.pop();
+                file.shift();
+                file = file.join('');
+
+
+                if (!/(https)|(http)/.test(file)) {
+                    file = file.replace(/((.*)[/])/, '');
+                } else {
+                    let fileName = (Math.random() + 1).toString(36).substring(4) + '.jpg';
+                    await downloadAndSave(file, fileName);
+                    console.log(`> [file-robot] -> Image successfully downloaded: ${fileName}`)
+                    file = fileName;
                 }
+
                 arrMd.push({
                     index: i,
                     value: file,
@@ -233,13 +259,19 @@ function regexSwt(str, i) {
                 })
                 break;
         }
-    } catch(e) {
+    } catch (e) {
         throw new Error('erro no regex de transformação de md para json');
     }
-   
+
+}
+
+async function downloadAndSave(url, fileName) {
+    return await imageDownloader.image({
+        url: url,
+        dest: `${config.dir.content}${config.folder}/${fileName}`
+    })
 }
 
 
-
-robot();
+module.exports = robot;
 
