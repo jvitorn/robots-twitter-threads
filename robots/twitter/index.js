@@ -53,7 +53,7 @@ async function createTweetsWithMedia(reply, image, text) {
 
 }
 
-async function postTweetsWithJson() {
+async function robot() {
   try {
     //localizando arquivos json
     let files = await fs.readdirSync(config.dir.finished);
@@ -92,4 +92,4 @@ async function postTweetsWithJson() {
   }
 
 }
-postTweetsWithJson();
+module.exports = robot;
